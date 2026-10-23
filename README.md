@@ -1,81 +1,81 @@
-# Audio Transcription using OpenAI Whisper
+# Grok AI Chat Streamer using xAI API
 
-A simple Python script to transcribe audio files into text using OpenAI's Whisper model and save the output to a text file.
+A simple Python script to stream real-time responses from xAI's **Grok** models using the OpenAI Python SDK configured with xAI's base URL.
 
 ## Features
 
-- Uses OpenAI's **Whisper** model for accurate speech recognition.
-- Automatically transcribes audio (`.mp3` or other supported formats) to text.
-- Saves the resulting transcript to `transcript.txt`.
-- Prints the generated transcript directly to the console.
+* **Streaming Responses**: Receive and print tokens in real-time as they are generated.
+* **OpenAI SDK Integration**: Uses the standard `openai` Python client configured with xAI endpoints (`https://api.x.ai/v1`).
+* **Grok Model Support**: Configured to query Grok models (`grok-4.5` or `grok-beta`).
 
 ## Prerequisites
 
-- **Python 3.8+**
-- **FFmpeg**: Whisper requires `ffmpeg` to be installed on your system.
-  - **macOS** (via Homebrew): `brew install ffmpeg`
-  - **Ubuntu/Debian**: `sudo apt update && sudo apt install ffmpeg`
-  - **Windows** (via Chocolatey): `choco install ffmpeg`
+* **Python 3.10+**
+* An active **xAI API Key** (obtainable from the [xAI Console](https://console.x.ai/)).
 
 ## Installation
 
-1. Clone or download this repository.
-2. Install the `openai-whisper` package using `pip`:
+Install the required Python packages using `pip`:
 
 ```bash
-pip install openai-whisper
+pip install openai xai-sdk
 ```
 
-*Note: Depending on your environment, PyTorch will be automatically installed as a dependency.*
+## Setup & Configuration
+
+1. Get your API key from the xAI developer portal.
+2. Either pass your API key directly into the script or set it as an environment variable (recommended):
+
+```bash
+export XAI_API_KEY="your-xai-api-key"
+```
 
 ## Usage
 
-1. Place your audio file in the same directory as the script and rename it to `audio.mp3` (or update the `file` variable in the script to match your audio file's path).
+1. Save your Python script (e.g., `app.py`).
 2. Run the script:
 
 ```bash
-python transcribe.py
+python app.py
 ```
 
-3. Once finished, you will find:
-   - The transcript displayed in your terminal/console.
-   - A new file named `transcript.txt` containing the transcribed text.
-
-## Code Overview
+## Code Example
 
 ```python
-import whisper
+import os
+from openai import OpenAI
 
-# Path to your input audio file
-file = "audio.mp3"
+# Initialize OpenAI client with xAI's base URL
+client = OpenAI(
+    api_key=os.environ.get("XAI_API_KEY", "YOUR_XAI_API_KEY"),
+    base_url="https://api.x.ai/v1"
+)
 
-# Load the desired Whisper model ('tiny', 'base', 'small', 'medium', 'large')
-model = whisper.load_model("base")
+# Request a streaming response
+response = client.responses.create(
+    model="grok-4.5",
+    max_output_tokens=500000,
+    reasoning={"effort": "low"},
+    stream=True,
+    input="What is the python Basics?",
+)
 
-# Transcribe the audio file
-text = model.transcribe(file)["text"]
-
-# Save the transcript to a text file
-with open("transcript.txt", "w", encoding="utf-8") as f:
-    f.write(text)
-
-# Output the transcript to the console
-print("\nTranscript:\n", text)
+# Stream the output directly to the console
+for event in response:
+    if hasattr(event, "delta") and event.delta:
+        print(event.delta, end="", flush=True)
 ```
+
+> **Note on Typos in Original Snippet**:
+> * Corrected `from openai import OpenSI` to `from openai import OpenAI`.
+> * Fixed variable name typo `envent.delta` to `event.delta`.
 
 ## Available Models
 
-Whisper provides several model sizes depending on your requirements for speed and accuracy:
-
-| Size | Parameters | Required VRAM | Relative Speed |
-| :--- | :--- | :--- | :--- |
-| `tiny` | 39 M | ~1 GB | ~32x |
-| **`base`** | **74 M** | **~1 GB** | **~16x** |
-| `small` | 244 M | ~2 GB | ~6x |
-| `medium` | 769 M | ~5 GB | ~2x |
-| `large` | 1550 M | ~10 GB | 1x |
-
-To switch models, simply change `"base"` in `whisper.load_model("base")` to your desired size (e.g., `"small"` or `"medium"`).
+| Model | Description |
+| :--- | :--- |
+| `grok-beta` / `grok-4.5` | Flagship Grok reasoning and text generation models |
+| `grok-vision-beta` | Multimodal model supporting image and text input |
 
 ## License
 
